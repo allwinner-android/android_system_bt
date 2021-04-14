@@ -701,12 +701,18 @@ intercepted:
 
   if (wait_entry) {
     // If it has a callback, it's responsible for freeing the packet
-    if (event_code == HCI_COMMAND_STATUS_EVT || (!wait_entry->complete_callback && !wait_entry->complete_future))
+    if (event_code == HCI_COMMAND_STATUS_EVT || (!wait_entry->complete_callback && !wait_entry->complete_future)) {
+      #ifndef HCI_USE_USB
       buffer_allocator->free(packet);
+      #endif
+    }
 
     // If it has a callback, it's responsible for freeing the command
-    if (event_code == HCI_COMMAND_COMPLETE_EVT || !wait_entry->status_callback)
+    if (event_code == HCI_COMMAND_COMPLETE_EVT || !wait_entry->status_callback) {
+      #ifndef HCI_USE_USB
       buffer_allocator->free(wait_entry->command);
+      #endif
+    }
 
     osi_free(wait_entry);
   } else {

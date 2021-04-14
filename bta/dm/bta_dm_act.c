@@ -48,6 +48,9 @@
 #if (GAP_INCLUDED == TRUE)
 #include "gap_api.h"
 #endif
+#include <stdio.h>
+#include <errno.h>
+#include "hcimsgs.h"
 
 static void bta_dm_inq_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_inq_cmpl_cb (void * p_result);
@@ -136,7 +139,7 @@ static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_observe_cmpl_cb(void * p_result);
 static void bta_dm_delay_role_switch_cback(void *data);
 extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8* p_uuid128);
-static void bta_dm_disable_timer_cback(void *data);
+/* static void bta_dm_disable_timer_cback(void *data); */
 
 
 const UINT16 bta_service_id_to_uuid_lkup_tbl [BTA_MAX_SERVICE_ID] =
@@ -452,7 +455,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 
 }
 
-
+#ifndef HCI_USE_USB
+extern tBTM_STATUS BTM_BleWoLEParamSetup(int action,BD_ADDR p_target, UINT8* MANU_DATA,int manu_data_len);
+#endif
 /*******************************************************************************
 **
 ** Function         bta_dm_disable
@@ -466,6 +471,16 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
 void bta_dm_disable (tBTA_DM_MSG *p_data)
 {
     UNUSED(p_data);
+
+#ifndef HCI_USE_USB
+    BD_ADDR bda;
+    BD_ADDR bda_empty;
+    memset(&bda,0,sizeof(BD_ADDR));
+    memset(&bda_empty,0,sizeof(BD_ADDR));
+    char wake_on_ble[128];
+    UINT8 BDADDR_AND_MANU[32];
+    int n=0,i=0;
+#endif
 
     /* Set l2cap idle timeout to 0 (so BTE immediately disconnects ACL link after last channel is closed) */
     L2CA_SetIdleTimeoutByBdAddr((UINT8 *)BT_BD_ANY, 0, BT_TRANSPORT_BR_EDR);
@@ -502,10 +517,56 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
     }
     else
     {
-        alarm_set_on_queue(bta_dm_cb.disable_timer, BTA_DM_DISABLE_TIMER_MS,
+        /* alarm_set_on_queue(bta_dm_cb.disable_timer, BTA_DM_DISABLE_TIMER_MS,
                            bta_dm_disable_timer_cback, UINT_TO_PTR(0),
-                           btu_bta_alarm_queue);
+                           btu_bta_alarm_queue); */
+
+        /* As we send reset before, no need to wait for acl change status*/
+        alarm_set_on_queue(bta_dm_cb.disable_timer, BTA_DISABLE_DELAY,
+                           bta_dm_disable_conn_down_timer_cback, NULL,
+                            btu_bta_alarm_queue);
     }
+
+#ifndef HCI_USE_USB
+    BTM_BleObserve(FALSE, 0, NULL, NULL);
+    //Issue PCF command to support WoLE and also start LE scan
+    FILE *fp_wole = fopen(WAKE_ON_BLE_CONF,"rt");
+    if(!fp_wole)
+    {
+        APPL_TRACE_ERROR("%s unable to open file '%s': %s", __func__, WAKE_ON_BLE_CONF, strerror(errno));
+	btsnd_hcic_reset(); /* reset controller state */
+        return;
+    }
+    fgets(wake_on_ble, sizeof(wake_on_ble), fp_wole);
+    memset(BDADDR_AND_MANU,'\0',sizeof(BDADDR_AND_MANU));
+    char *p= wake_on_ble;
+
+    while (*p != 0)
+    {
+        while (*p == ' ' || *p == '\t')
+            p++;
+
+        if (sscanf(p, "%02x", (unsigned int *)&BDADDR_AND_MANU[n]) == 0)
+            break;
+        n++;
+        p++;
+        while ( (*p>= '0' && *p<= '9') ||
+                (*p>= 'a' && *p<= 'f') ||
+                (*p>= 'A' && *p<= 'F'))
+            p++;
+    }
+
+    int manu_data_len = (int)BDADDR_AND_MANU[6];
+    for(i=0;i<BD_ADDR_LEN;i++)
+        bda[i] = BDADDR_AND_MANU[i];
+
+    btsnd_hcic_reset(); //reset controller state
+
+    btsnd_hcic_write_bdaddr(bda_empty);//set it to empty to prevent direct adv wake system up
+    BTM_BleWoLEParamSetup(0,bda, &BDADDR_AND_MANU[7],manu_data_len);
+    APPL_TRACE_DEBUG("%s Luke:Set BleWoLe enable",__FUNCTION__);
+    BTM_BleObserve(TRUE,0, NULL,NULL);
+#endif
 }
 
 /*******************************************************************************
@@ -520,6 +581,7 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
 ** Returns          void
 **
 *******************************************************************************/
+#if 0
 static void bta_dm_disable_timer_cback(void *data)
 {
     UINT8 i;
@@ -558,7 +620,7 @@ static void bta_dm_disable_timer_cback(void *data)
         bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
     }
 }
-
+#endif
 
 
 

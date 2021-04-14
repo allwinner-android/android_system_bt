@@ -44,6 +44,8 @@ const char *dev_path = "/dev/uhid";
 static tBTA_HH_RPT_CACHE_ENTRY sReportCache[BTA_HH_NV_LOAD_MAX];
 #endif
 
+static int suspend_fd = -1;
+
 void uhid_set_non_blocking(int fd)
 {
     int opts = fcntl(fd, F_GETFL);
@@ -100,8 +102,9 @@ static int uhid_read_event(btif_hh_device_t *p_dev)
         // ensure we read full event descriptor
         if (ret < (ssize_t)sizeof(ev)) {
             APPL_TRACE_ERROR("%s: Invalid size read from uhid-dev: %ld != %lu",
-                         __FUNCTION__, ret, sizeof(ev.type));
-            return -EFAULT;
+                         __FUNCTION__, ret, sizeof(ev));
+            // We can not return fail here, in order to compatible with the old kernel uhid driver.
+            //return -EFAULT;
         }
     }
 
@@ -391,6 +394,11 @@ void bta_hh_co_close(UINT8 dev_handle, UINT8 app_id)
             break;
         }
      }
+
+    if (suspend_fd > 0) {
+        close(suspend_fd);
+        suspend_fd = -1;
+    }
 }
 
 
@@ -415,6 +423,7 @@ void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len, tBTA_HH_PROTO_MO
 {
     btif_hh_device_t *p_dev;
     UNUSED(peer_addr);
+    char buf[1];
 
     APPL_TRACE_DEBUG("%s: dev_handle = %d, subclass = 0x%02X, mode = %d, "
          "ctry_code = %d, app_id = %d",
@@ -424,6 +433,33 @@ void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len, tBTA_HH_PROTO_MO
     if (p_dev == NULL) {
         APPL_TRACE_WARNING("%s: Error: unknown HID device handle %d", __FUNCTION__, dev_handle);
         return;
+    }
+
+    /*
+    int i;
+    for (i = 0; i < len; i++) {
+        APPL_TRACE_ERROR("%s, rpt[%d]: 0x%x", __FUNCTION__, i, p_rpt[i]);
+    }
+    */
+
+    if (suspend_fd < 0) {
+        suspend_fd = open("/proc/bluetooth/sleep/suspend", O_RDWR);
+        if (suspend_fd < 0) {
+            APPL_TRACE_ERROR("%s, can not open /proc/bluetooth/sleep/suspend, (%s)", __FUNCTION__, strerror(errno));
+        }
+    }
+
+    if ((suspend_fd > 0) && (read(suspend_fd, &buf, sizeof(buf)) > 0)) {
+        if (buf[0] == 1) {
+            /* if ((len == 9) && (p_rpt[0] == 0x1) && (p_rpt[3] == 0x66)) { */
+	    if ((len == 4) && (p_rpt[0] == 0x1) && (p_rpt[1] == 0x30)) {
+                buf[0] = '1';
+                if (write(suspend_fd, &buf[0], 1) < 0)
+                    APPL_TRACE_ERROR("%s, failed to write /proc/bluetooth/sleep/suspend, (%s)", __FUNCTION__, strerror(errno));
+            } else {
+                return;
+            }
+        }
     }
 
     // Send the HID data to the kernel.

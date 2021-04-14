@@ -54,6 +54,8 @@
 #include "osi/include/log.h"
 #include "vendor_api.h"
 
+#include "btm_ble_api.h"
+
 /*******************************************************************************
 **  Constants & Macros
 ********************************************************************************/
@@ -594,6 +596,9 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param)
                   btif_gattc_update_properties(p_btif_cb);
                }
             }
+
+            if (p_eir_remote_name)
+                btif_gattc_update_properties(p_btif_cb);
 
              dev_type =  p_btif_cb->device_type;
              BTIF_STORAGE_FILL_PROPERTY(&properties,

@@ -27,6 +27,13 @@ void bte_main_hci_send(BT_HDR *p_msg, UINT16 event);
 void bte_main_lpm_allow_bt_device_sleep(void);
 
 /* Message by message.... */
+extern BOOLEAN btsnd_hcic_reset();
+
+#define HCIC_PARAM_SIZE_RESET 0
+
+extern BOOLEAN btsnd_hcic_write_bdaddr(BD_ADDR mac);
+
+#define HCIC_PARAM_SIZE_WRITE_BD_ADDR 6
 
 extern BOOLEAN btsnd_hcic_inquiry(const LAP inq_lap, UINT8 duration,
                                   UINT8 response_cnt);

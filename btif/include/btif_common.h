@@ -169,6 +169,9 @@ enum
 
 #define FACTORY_BT_BDADDR_STORAGE_LEN   17
 
+#define PERSIST_USBBT_PROPERTY         "persist.service.bdroid.usbbt"
+
+#define PERSIST_BTSLEEP_PROPERTY       "persist.service.bdroid.sleep"
 
 /*******************************************************************************
 **  Type definitions for callback functions

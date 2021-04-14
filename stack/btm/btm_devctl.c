@@ -39,6 +39,7 @@
 #include "l2c_int.h"
 #include "btcore/include/module.h"
 #include "osi/include/thread.h"
+#include "hcidefs.h"
 
 #if BLE_INCLUDED == TRUE
 #include "gatt_int.h"
@@ -682,6 +683,14 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
                        tBTM_CMPL_CB *p_vsc_cplt_cback)
 {
     tBTM_VSC_CMPL   vcs_cplt_params;
+
+#ifndef HCI_USE_USB
+	//if (HCI_BLE_META_VSC == opcode)
+	if (0xfc01 == opcode)
+		return;
+
+	BTM_TRACE_ERROR("%s(), opcode: 0x%x", __func__, opcode);
+#endif
 
     /* If there was a callback address for vcs complete, call it */
     if (p_vsc_cplt_cback)

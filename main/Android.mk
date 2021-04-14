@@ -79,9 +79,10 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libbt-stack \
     libbt-utils \
     libbtcore \
-    libosi
+    libosi \
+    libusb
 
-LOCAL_MODULE := bluetooth.default
+LOCAL_MODULE := bluetooth.bcm.default
 LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
@@ -99,7 +100,9 @@ LOCAL_REQUIRED_MODULES := \
     bt_did.conf \
     bt_stack.conf \
     libbt-hci \
-    libbt-vendor
+    libbt-vendor-bcm \
+    libusb \
+    rc.conf
 
 LOCAL_CFLAGS += $(bluetooth_CFLAGS) -DBUILDCFG
 LOCAL_CONLYFLAGS += $(bluetooth_CONLYFLAGS)

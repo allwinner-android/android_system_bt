@@ -367,6 +367,8 @@
 /* Energy info OCF */
 #define HCI_BLE_ENERGY_INFO_OCF   (0x0159 | HCI_GRP_VENDOR_SPECIFIC)
 
+#define HCI_BLE_META_VSC          (0x00E9 | HCI_GRP_VENDOR_SPECIFIC)
+
 /* Extended BLE Scan parameters OCF */
 #define HCI_BLE_EXTENDED_SCAN_PARAMS_OCF  (0x015A | HCI_GRP_VENDOR_SPECIFIC)
 
@@ -1362,6 +1364,8 @@ typedef struct
 #define HCI_BRCM_ACL_PRIORITY_LOW           0x00
 #define HCI_BRCM_ACL_PRIORITY_HIGH          0xFF
 #define HCI_BRCM_SET_ACL_PRIORITY           (0x0057 | HCI_GRP_VENDOR_SPECIFIC)
+
+#define HCI_BRCM_WRITE_BD_ADDR              (0x0001 | HCI_GRP_VENDOR_SPECIFIC)
 
 /* Define values for LMP Test Control parameters
 ** Test Scenario, Hopping Mode, Power Control Mode

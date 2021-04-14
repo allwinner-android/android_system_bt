@@ -50,6 +50,7 @@
 #include "btif_debug.h"
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
+#include "bt_common.h"
 #include "device/include/interop.h"
 #include "osi/include/allocation_tracker.h"
 #include "osi/include/alarm.h"
@@ -57,6 +58,7 @@
 #include "osi/include/metrics.h"
 #include "osi/include/osi.h"
 #include "osi/include/wakelock.h"
+#include "osi/include/properties.h"
 #include "stack_manager.h"
 #include "btif_config.h"
 #include "btif_storage.h"
@@ -135,6 +137,16 @@ static int init(bt_callbacks_t *callbacks) {
   allocation_tracker_init();
 #endif
 
+  #ifdef HCI_USE_USB
+  if (osi_property_set(PERSIST_USBBT_PROPERTY, "1") < 0)
+    LOG_ERROR(LOG_TAG, "%s(), failed to set property: %s", __func__, PERSIST_USBBT_PROPERTY);
+  #else
+  if (osi_property_set("persist.service.bdroid.uart", "1") < 0)
+    LOG_ERROR(LOG_TAG, "Failed to set bt module info in prop: persist.service.bdroid.uart");
+  if (osi_property_set(PERSIST_BTSLEEP_PROPERTY, "bcm") < 0)
+    LOG_ERROR(LOG_TAG, "Failed to set bt module info in prop: %s", PERSIST_BTSLEEP_PROPERTY);
+  #endif
+
   bt_hal_cbacks = callbacks;
   stack_manager_get_interface()->init_stack();
   btif_debug_init();
@@ -148,6 +160,15 @@ static int enable(bool start_restricted) {
 
   if (!interface_ready())
     return BT_STATUS_NOT_READY;
+
+  #ifdef HCI_USE_USB
+  char pval[PROPERTY_VALUE_MAX] = {0};
+  osi_property_get("sys.usbbt.inserted", pval, NULL);
+  if (pval[0] != '1') {
+    LOG_ERROR(LOG_TAG, "%s(), USB BT dongle not inserted, ignore enable operation...", __func__);
+    return BT_STATUS_NOT_READY;
+  }
+  #endif
 
   stack_manager_get_interface()->start_up_stack_async();
   return BT_STATUS_SUCCESS;

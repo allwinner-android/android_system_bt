@@ -1112,7 +1112,9 @@ static void btu_hcif_command_status_evt_on_task(BT_HDR *event)
       stream,
       hack->context);
 
+    #ifndef HCI_USE_USB
     osi_free(hack->command);
+    #endif
     osi_free(event);
 }
 

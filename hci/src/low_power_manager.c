@@ -141,11 +141,11 @@ static void enable(bool enable) {
       LOG_ERROR(LOG_TAG, "%s still processing prior enable request, ignoring new request to enable.", __func__);
     else
       LOG_WARN(LOG_TAG, "%s still processing prior enable request, cannot disable.", __func__);
-  } else if (state == LPM_ENABLED && enable) {
+  } /* else if (state == LPM_ENABLED && enable) {
     LOG_INFO(LOG_TAG, "%s already enabled.", __func__);
   } else if (state == LPM_DISABLED && !enable) {
     LOG_INFO(LOG_TAG, "%s already disabled.", __func__);
-  } else {
+  } */ else {
     uint8_t command = enable ? BT_VND_LPM_ENABLE : BT_VND_LPM_DISABLE;
     state = enable ? LPM_ENABLING : LPM_DISABLING;
     if (state == LPM_ENABLING)

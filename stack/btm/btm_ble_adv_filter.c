@@ -1030,6 +1030,167 @@ tBTM_STATUS btm_ble_clear_scan_pf_filter(tBTM_BLE_SCAN_COND_OP action,
     return st;
 }
 
+#ifndef HCI_USE_USB
+tBTM_STATUS BTM_BleWoLEParamSetup(int action,BD_ADDR p_target, UINT8* MANU_DATA,int manu_data_len)
+{
+#define BTM_BLE_WOLE_PARAM_SIZE 20
+    int i,len=0;
+
+    tBTM_STATUS     st = BTM_WRONG_MODE;
+    UINT8       param[BTM_BLE_WOLE_PARAM_SIZE],*p;
+    p= param;
+/*
+    [57 FD 02]: 00 01
+    opcode = 0xFD57 (64855, "LE_ADV_BRCM_Packet_Content_Filter")
+    Sub_Command = 0x0 (0, "LE ADV BRCM Packet Content Filter Enable")
+    LE_ADV_BRCM_PCF_Enable = 0x1 (1)
+*/
+    memset(param, 0, BTM_BLE_WOLE_PARAM_SIZE);
+    UINT8_TO_STREAM(p, 0x0); // LE ADV BRCM Packet Content Filter Enable
+    len+=1;
+    UINT8_TO_STREAM(p, 1); // Enable
+    len+=1;
+
+    if ((st = BTM_VendorSpecificCommand (HCI_BLE_ADV_FILTER_OCF,
+                    (UINT8)len,
+                    param,
+                    NULL))
+            == BTM_NO_RESOURCES)
+    {
+        return st;
+    }
+
+/*
+[57 FD 0A]: 02 00 00 11 11 11 11 11 11 00
+opcode = 0xFD57 (64855, "LE_ADV_BRCM_Packet_Content_Filter")
+Sub_Command = 0x2 (2, "LE Adv BRCM Packet Content Filter Broadcaster Address")
+LE_ADV_BRCM_PCF_Action = 0x0 (0, "Add")
+LE_ADV_BRCM_PCF_Filter_Index = 0x0 (0)
+LE_ADV_BRCM_PCF_Broadcaster_Address = "111111111111"
+LE_ADV_BRCM_PCF_Broadcaster_Address_Type = 0x0 (0, "Public Address")
+*/
+    st = BTM_WRONG_MODE;
+
+    memset(param, 0, BTM_BLE_WOLE_PARAM_SIZE);
+    p= param;
+    len=0;
+
+    memset(param, 0, BTM_BLE_WOLE_PARAM_SIZE);
+    UINT8_TO_STREAM(p, 0x2); // LE Adv BRCM Packet Content Filter Broadcaster Address
+    len+=1;
+    UINT8_TO_STREAM(p, 0); // Add
+    len+=1;
+    UINT8_TO_STREAM(p, 0); // Index
+    len+=1;
+    BDADDR_TO_STREAM(p, p_target); // Target address
+    len+=6;
+    UINT8_TO_STREAM(p, 0); // Public address
+    len+=1;
+
+    if ((st = BTM_VendorSpecificCommand (HCI_BLE_ADV_FILTER_OCF,
+                    (UINT8)len,
+                    param,
+                    NULL))
+            == BTM_NO_RESOURCES)
+    {
+        return st;
+    }
+
+/*
+    [57 FD 13]: 06 00 00 0F 01 03 41 4B 45 55 50 0F 01 03 41 4B 45 55 50
+    opcode = 0xFD57 (64855, "LE_ADV_BRCM_Packet_Content_Filter")
+    Sub_Command = 0x6 (6, "LE Adv BRCM Packet Content Filter Manufacturer Data")
+    LE_ADV_BRCM_PCF_Action = 0x0 (0, "Add")
+    LE_ADV_BRCM_PCF_Filter_Index = 0x0 (0)
+    LE_ADV_BRCM_PCF_LocName_or_ManData_or_SerData = "0F 01 03 41 4B 45 55 50"
+    LE_ADV_BRCM_PCF_ManData_or_SerData_MASK = "0F 01 03 41 4B 45 55 50"
+*/
+    st = BTM_WRONG_MODE;
+    p = param;
+    len = 0;
+
+    memset(param, 0, BTM_BLE_WOLE_PARAM_SIZE);
+    UINT8_TO_STREAM(p, 0x6); // LE Adv BRCM Packet Content Filter Manufacturer Data
+    len+=1;
+    UINT8_TO_STREAM(p, 0); // Add
+    len+=1;
+    UINT8_TO_STREAM(p, 0); // Filter Index
+    len+=1;
+
+    for(i=0;i<manu_data_len;i++) //LE_ADV_BRCM_PCF_LocName_or_ManData_or_SerData
+    {
+        *p = *(MANU_DATA+i);
+        p++;
+    }
+    len+= manu_data_len;
+
+    for(i=0;i<manu_data_len;i++) //LE_ADV_BRCM_PCF_ManData_or_SerData_MASK
+    {
+        *p = *(MANU_DATA+i);
+        p++;
+    }
+    len+= manu_data_len;
+
+    if ((st = BTM_VendorSpecificCommand (HCI_BLE_ADV_FILTER_OCF,
+                    (UINT8)len,
+                    param,
+                    NULL))
+            == BTM_NO_RESOURCES)
+    {
+        return st;
+    }
+
+/*
+    [57 FD 0A]: 01 00 00 21 00 01 00 01 81 00
+    opcode = 0xFD57 (64855, "LE_ADV_BRCM_Packet_Content_Filter")
+    Sub_Command = 0x1 (1, "LE Adv BRCM Packet Content Filter Set Filtering Parameters")
+    LE_ADV_BRCM_PCF_Action = 0x0 (0, "Add")
+    LE_ADV_BRCM_PCF_Filter_Index = 0x0 (0)
+    LE_ADV_BRCM_PCF_Feature_Selection = 0x21 (33, "LE_ADV_BRCM_PCF Broadcast Address | LE_ADV_BRCM_PCF Manufacturer Data")
+    LE_ADV_BRCM_PCF_Feature_Logical_Type (check: AND, uncheck: OR) = 0x1 (1, "LE_ADV_BRCM_PCF Broadcast Address")
+    LE_ADV_BRCM_PCF_Filter_Logical_Type = 0x1 (1, "AND")
+    LE_ADV_BRCM_PCF_RSSI_High_Threshold (in dBm) = -127
+    LE_ADV_BRCM_PCF_Delivery_Mode = 0x0 (0, "Immediate")
+*/
+    st = BTM_WRONG_MODE;
+    memset(param, 0, BTM_BLE_WOLE_PARAM_SIZE);
+    p= param;
+    len=0;
+    UINT8_TO_STREAM(p, 0x1); //LE Adv BRCM Packet Content Filter Set Filtering Parameters
+    len+=1;
+    UINT8_TO_STREAM(p, 0); // Add
+    len+=1;
+    UINT8_TO_STREAM(p, 0); // Filter
+    len+=1;
+
+    UINT16_TO_STREAM(p, 0x21); // LE_ADV_BRCM_PCF_Feature_Selection =>LE_ADV_BRCM_PCF Broadcast Address | LE_ADV_BRCM_PCF Manufacturer Data
+    len+=2;
+
+    UINT16_TO_STREAM(p, 0x1);  //LE_ADV_BRCM_PCF_Feature_Logical_Type
+    len+=2;
+
+    UINT8_TO_STREAM(p, 0x1); //LE_ADV_BRCM_PCF_Filter_Logical_Type
+    len+=1;
+
+    UINT8_TO_STREAM(p, 0x81);//LE_ADV_BRCM_PCF_RSSI_High_Threshold
+    len+=1;
+
+    UINT8_TO_STREAM(p, 0x0); //LE_ADV_BRCM_PCF_Delivery_Mode
+    len+=1;
+
+    if ((st = BTM_VendorSpecificCommand (HCI_BLE_ADV_FILTER_OCF,
+                    (UINT8)len,
+                    param,
+                    NULL))
+            == BTM_NO_RESOURCES)
+    {
+        return st;
+    }
+
+    return st;
+}
+#endif
+
 /*******************************************************************************
 **
 ** Function         BTM_BleAdvFilterParamSetup

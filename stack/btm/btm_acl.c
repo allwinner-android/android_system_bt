@@ -1299,6 +1299,7 @@ tBTM_STATUS BTM_GetLinkSuperTout (BD_ADDR remote_bda, UINT16 *p_timeout)
 *******************************************************************************/
 tBTM_STATUS BTM_SetLinkSuperTout (BD_ADDR remote_bda, UINT16 timeout)
 {
+#ifndef HCI_USE_USB
     tACL_CONN   *p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
 
     BTM_TRACE_DEBUG ("BTM_SetLinkSuperTout");
@@ -1321,6 +1322,9 @@ tBTM_STATUS BTM_SetLinkSuperTout (BD_ADDR remote_bda, UINT16 timeout)
 
     /* If here, no BD Addr found */
     return(BTM_UNKNOWN_ADDR);
+#else
+    return(BTM_CMD_STARTED);
+#endif
 }
 
 /*******************************************************************************

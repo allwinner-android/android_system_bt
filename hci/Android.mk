@@ -13,13 +13,15 @@ LOCAL_SRC_FILES := \
     src/hci_hal.c \
     src/hci_hal_h4.c \
     src/hci_hal_mct.c \
+    src/hci_hal_usb.c \
     src/hci_inject.c \
     src/hci_layer.c \
     src/hci_packet_factory.c \
     src/hci_packet_parser.c \
     src/low_power_manager.c \
     src/packet_fragmenter.c \
-    src/vendor.c
+    src/vendor.c \
+    src/usb.c
 
 LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/include \
@@ -30,6 +32,12 @@ LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/../utils/include \
     $(LOCAL_PATH)/../bta/include \
     $(bluetooth_C_INCLUDES)
+
+LOCAL_C_INCLUDES += \
+    external/libusb
+
+LOCAL_STATIC_LIBRARIES += \
+    libusb
 
 LOCAL_MODULE := libbt-hci
 

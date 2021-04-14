@@ -20,6 +20,9 @@
 #ifndef BT_TARGET_H
 #define BT_TARGET_H
 
+#define RC_CONF "/etc/bluetooth/rc.conf"
+#define WAKE_ON_BLE_CONF "/data/misc/bluedroid/wake_on_ble.conf"
+
 #ifndef BUILDCFG
 #define BUILDCFG
 #endif
@@ -91,7 +94,7 @@
 #endif
 
 #ifndef BTA_DISABLE_DELAY
-#define BTA_DISABLE_DELAY 200 /* in milliseconds */
+#define BTA_DISABLE_DELAY 1500 /* in milliseconds */
 #endif
 
 #ifndef SBC_FOR_EMBEDDED_LINUX
@@ -688,7 +691,7 @@
  * resolution, local address rotation etc.
  */
 #ifndef BLE_PRIVACY_SPT
-#define BLE_PRIVACY_SPT         TRUE
+#define BLE_PRIVACY_SPT         FALSE
 #endif
 
 /*

@@ -35,6 +35,41 @@
 
 #include "btm_int.h"    /* Included for UIPC_* macro definitions */
 
+BOOLEAN btsnd_hcic_reset ()
+{
+    BT_HDR *p = (BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE);
+    UINT8 *pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_RESET;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_RESET);
+    UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_RESET);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    return (TRUE);
+}
+
+BOOLEAN btsnd_hcic_write_bdaddr(BD_ADDR mac)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    p = (BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE);
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_WRITE_BD_ADDR;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_BRCM_WRITE_BD_ADDR);
+    UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_WRITE_BD_ADDR);
+    BDADDR_TO_STREAM(pp,mac);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return (TRUE);
+}
+
 BOOLEAN btsnd_hcic_inquiry(const LAP inq_lap, UINT8 duration, UINT8 response_cnt)
 {
     BT_HDR *p = (BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE);
